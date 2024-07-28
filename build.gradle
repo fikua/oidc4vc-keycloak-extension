@@ -1,0 +1,125 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+    id 'jacoco'
+    id 'checkstyle'
+    id 'org.owasp.dependencycheck' version '9.1.0'
+    id 'io.swagger.core.v3.swagger-gradle-plugin' version '2.2.22'
+    id 'org.openapi.generator' version '7.7.0'
+}
+
+group = 'org.fikua'
+version = '0.0.1'
+
+java {
+    sourceCompatibility = '17'
+    targetCompatibility = '17'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+checkstyle {
+    toolVersion = '10.16.0'
+    configFile = file("${rootDir}/checkstyle/checkstyle.xml")
+}
+
+checkstyleMain {
+    source = 'src/main/java'
+}
+
+checkstyleTest {
+    source = 'src/test/java'
+}
+
+openApiGenerate {
+    generatorName = 'java'
+    inputSpec = "$rootDir/api/api.yaml"
+    outputDir = "$buildDir/generated"
+    apiPackage = 'org.fikua.api'
+    modelPackage = 'org.fikua.model'
+    configOptions = [
+            dateLibrary: "java8",
+            library: "native",
+            useBeanValidation: "true",
+            useJakarta: "true",
+            serializationLibrary: "jackson",
+    ]
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir("$buildDir/generated/src/main/java")
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // OpenApi - CORE
+    implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
+    implementation 'org.openapitools:jackson-databind-nullable:0.2.6'
+    implementation 'com.google.auto.service:auto-service:1.1.1'
+    // Keycloak
+    implementation 'org.keycloak:keycloak-quarkus-server-deployment:25.0.2'
+    implementation 'org.keycloak:keycloak-core:25.0.2'
+    implementation 'org.keycloak:keycloak-common:25.0.2'
+    implementation 'org.keycloak:keycloak-model-jpa:25.0.2'
+    implementation 'org.keycloak:keycloak-server-spi:25.0.2'
+    implementation 'org.keycloak:keycloak-server-spi-private:25.0.2'
+    implementation 'org.keycloak:keycloak-services:25.0.2'
+    // DevTools
+    compileOnly 'org.projectlombok:lombok:1.18.34'
+    annotationProcessor 'org.projectlombok:lombok:1.18.34'
+    implementation 'io.swagger:swagger-annotations:1.6.14'
+    // Test
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.keycloak:keycloak-admin-client:25.0.2'
+}
+
+tasks.named('compileJava') {
+    dependsOn(tasks.openApiGenerate)
+    options.encoding = 'UTF-8'
+    inputs.files(tasks.named('processResources'))
+}
+
+tasks.register('printProjectName') {
+    doLast {
+        println rootProject.name
+    }
+}
+
+tasks.register('printVersion') {
+    doLast {
+        println version
+    }
+}
+
+tasks.register('checkstyle') {
+    reports {
+        xml.required = false
+        html.required = true
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        csv.required.set(false)
+        html.outputLocation.set(layout.buildDirectory.dir("jacocoHtml"))
+    }
+}

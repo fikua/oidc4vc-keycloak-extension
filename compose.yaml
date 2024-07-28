@@ -1,0 +1,37 @@
+services:
+
+  keycloak:
+    image: oidc4vc-kc-ext:latest
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KEYCLOAK_AUTH_SERVER_URL: http://localhost:8080/auth
+      KEYCLOAK_REALM: demo
+      ISSUER_API_URL: http://localhost:8080/realms/
+      ISSUER_API_EXTERNAL_URL: http://localhost:8080/realms/
+      PRE_AUTH_LIFESPAN: 10
+      PRE_AUTH_LIFESPAN_TIME_UNIT: MINUTES
+      TX_CODE_SIZE: 4
+      TX_CODE_DESCRIPTION: "Transaction code for the user"
+      TOKEN_EXPIRATION: 3600 # 1 hour
+      DB_VENDOR: POSTGRES
+      DB_ADDR: postgres
+      DB_DATABASE: keycloak
+      DB_USER: keycloak
+      DB_SCHEMA: public
+      DB_PASSWORD: password
+    ports:
+      - 8080:8080
+
+  postgres:
+    image: postgres
+    container_name: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password
+
+volumes:
+  postgres_data:
