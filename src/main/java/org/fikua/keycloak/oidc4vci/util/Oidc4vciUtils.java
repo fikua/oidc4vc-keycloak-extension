@@ -1,13 +1,13 @@
-package org.fikua.keycloak.util;
+package org.fikua.keycloak.oidc4vci.util;
 
 import org.keycloak.common.util.Base64Url;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
-public class ApplicationUtils {
+public class Oidc4vciUtils {
 
-    private ApplicationUtils() {
+    private Oidc4vciUtils() {
         throw new IllegalStateException("Utility class");
     }
 

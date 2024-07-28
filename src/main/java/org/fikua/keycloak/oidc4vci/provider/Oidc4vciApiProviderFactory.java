@@ -1,4 +1,4 @@
-package org.fikua.keycloak.oidc4vci;
+package org.fikua.keycloak.oidc4vci.provider;
 
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.Config;
@@ -10,7 +10,7 @@ import org.keycloak.services.resource.RealmResourceProviderFactory;
 @Slf4j
 public class Oidc4vciApiProviderFactory implements RealmResourceProviderFactory {
 
-    public static final String ID = "";
+    public static final String ID = "vci";
 
     @Override
     public RealmResourceProvider create(KeycloakSession session) {

@@ -1,7 +1,7 @@
-package org.fikua.keycloak.oidc4vci;
+package org.fikua.keycloak.oidc4vci.provider;
 
-import org.fikua.keycloak.oidc4vci.service.OIDC4VCIService;
-import org.fikua.keycloak.oidc4vci.service.impl.OIDC4VCIServiceImpl;
+import org.fikua.keycloak.oidc4vci.service.Oidc4vciService;
+import org.fikua.keycloak.oidc4vci.service.impl.Oidc4VciServiceImpl;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -16,14 +16,14 @@ import org.keycloak.services.resource.RealmResourceProvider;
 import java.util.Optional;
 
 @Slf4j
-@Path("")
+@Path("vci")
 public class Oidc4vciApiProvider implements RealmResourceProvider {
 
     public static final String ACCESS_CONTROL = "Access-Control-Allow-Origin";
 
     private final KeycloakSession session;
 
-    private final OIDC4VCIService oidc4VCIService = new OIDC4VCIServiceImpl();
+    private final Oidc4vciService oidc4VCIService = new Oidc4VciServiceImpl();
 
     public Oidc4vciApiProvider(KeycloakSession session) {
         this.session = session;
@@ -37,15 +37,6 @@ public class Oidc4vciApiProvider implements RealmResourceProvider {
     @Override
     public void close() {
         log.info("Closing Oidc4vciApiProvider");
-    }
-
-    @Path("greetings")
-    @Produces({MediaType.APPLICATION_JSON})
-    public Response getGreetings() {
-        return Response.ok()
-                .entity("Hello, world!")
-                .header(ACCESS_CONTROL, "*")
-                .build();
     }
 
     @GET

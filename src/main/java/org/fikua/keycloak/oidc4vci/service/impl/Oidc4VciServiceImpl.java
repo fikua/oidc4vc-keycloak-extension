@@ -3,7 +3,7 @@ package org.fikua.keycloak.oidc4vci.service.impl;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.fikua.keycloak.oidc4vci.service.OIDC4VCIService;
+import org.fikua.keycloak.oidc4vci.service.Oidc4vciService;
 import org.fikua.model.CredentialOffer;
 import org.fikua.model.PreAuthorizedCodeGrant;
 import org.fikua.model.PreAuthorizedCodeGrantUrnIetfParamsOauthGrantTypePreAuthorizedCode;
@@ -13,14 +13,14 @@ import java.security.SecureRandom;
 import java.util.List;
 
 import static org.fikua.keycloak.config.KeycloakConfig.*;
-import static org.fikua.keycloak.util.ApplicationUtils.generateCustomNonce;
+import static org.fikua.keycloak.oidc4vci.util.Oidc4vciUtils.generateCustomNonce;
 
 @Slf4j
-public class OIDC4VCIServiceImpl implements OIDC4VCIService {
+public class Oidc4VciServiceImpl implements Oidc4vciService {
 
     private Cache<String, String> cache;
 
-    public OIDC4VCIServiceImpl() {
+    public Oidc4VciServiceImpl() {
         initializeCache();
     }
 
