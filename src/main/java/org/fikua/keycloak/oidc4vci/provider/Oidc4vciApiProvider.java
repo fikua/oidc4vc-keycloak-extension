@@ -1,13 +1,14 @@
 package org.fikua.keycloak.oidc4vci.provider;
 
-import org.fikua.keycloak.oidc4vci.service.Oidc4vciService;
-import org.fikua.keycloak.oidc4vci.service.impl.Oidc4VciServiceImpl;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
-import org.fikua.keycloak.config.KeycloakConfig;
-import org.fikua.model.*;
+import org.fikua.keycloak.oidc4vci.service.Oidc4vciService;
+import org.fikua.keycloak.oidc4vci.service.impl.Oidc4VciServiceImpl;
+import org.fikua.model.ErrorResponse;
+import org.fikua.model.VcFormat;
+import org.fikua.model.VcType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.services.ErrorResponseException;
@@ -43,10 +44,8 @@ public class Oidc4vciApiProvider implements RealmResourceProvider {
     @Path(".well-known/openid-configuration")
     @Produces({MediaType.APPLICATION_JSON})
     public Response getAuthServerMetadata() {
-        AuthorizationServerMetadata authorizationServerMetadata = new AuthorizationServerMetadata();
-        authorizationServerMetadata.setPreAuthorizedGrantAnonymousAccessSupported(true);
         return Response.ok()
-                .entity(authorizationServerMetadata)
+                .entity(oidc4VCIService.buildOAuth2AuthorizationServerMetadata())
                 .header(ACCESS_CONTROL, "*")
                 .build();
     }
@@ -55,19 +54,8 @@ public class Oidc4vciApiProvider implements RealmResourceProvider {
     @Path(".well-known/openid-credential-issuer")
     @Produces({MediaType.APPLICATION_JSON})
     public Response getCredentialIssuerMetadata() {
-//        CredentialIssuerMetadataCredentialConfigurationsSupported credentialConfigurationsSupported = new CredentialIssuerMetadataCredentialConfigurationsSupported();
-        // LEARCredentialEmployee Configuration Supported
-
-        // VerifiableCertification Configuration Supported
-
-        CredentialIssuerMetadata credentialIssuerMetadata = new CredentialIssuerMetadata();
-        credentialIssuerMetadata.setCredentialIssuer(KeycloakConfig.getIssuerExternalUrl());
-        credentialIssuerMetadata.setCredentialEndpoint(KeycloakConfig.getIssuerExternalUrl()+"/credential");
-        // todo:
-        // credentialIssuerMetadata.setCredentialConfigurationsSupported();
-
         return Response.ok()
-                .entity(credentialIssuerMetadata)
+                .entity(oidc4VCIService.buildCredentialIssuerMetadata())
                 .header(ACCESS_CONTROL, "*")
                 .build();
     }
@@ -76,20 +64,32 @@ public class Oidc4vciApiProvider implements RealmResourceProvider {
     @Path("credential-offer")
     @Produces({MediaType.APPLICATION_JSON})
     public Response getCredentialOffer(@QueryParam("type") String vcType, @QueryParam("format") String vcFormat) {
-        // check if the provided type is supported
-        VcType vcTypeResult = Optional.ofNullable(vcType).map(VcType::fromValue).orElseThrow(() ->
-                new ErrorResponseException(getErrorResponse(ErrorType.valueOf("Invalid type"))));
-        // check if the provided format is supported
-        VcFormat vcFormatResult = Optional.ofNullable(vcFormat).map(VcFormat::fromValue).orElseThrow(() ->
-                new ErrorResponseException(getErrorResponse(ErrorType.valueOf("Invalid format"))));
-        log.debug("Get an offer for {} - {}", vcTypeResult, vcFormatResult);
-        // Generate credential offer
-        CredentialOffer credentialOffer = oidc4VCIService.buildCredentialOffer(vcType);
+        checkVcType(vcType);
+        checkVcFormat(vcFormat);
         return Response.ok()
-                .entity(credentialOffer)
+                .entity(oidc4VCIService.buildCredentialOffer(vcType))
                 .header(ACCESS_CONTROL, "*")
                 .type(MediaType.APPLICATION_JSON)
                 .build();
+    }
+
+    @GET
+    @Path("credential-offer/{id}")
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response getCredentialOfferById(@PathParam("id") String id) {
+        try {
+        return Response.ok()
+                .entity(oidc4VCIService.getCredentialOfferById(id))
+                .header(ACCESS_CONTROL, "*")
+                .type(MediaType.APPLICATION_JSON)
+                .build();
+        } catch (ErrorResponseException e) {
+            return Response.fromResponse(e.getResponse())
+                    .entity(e.getResponse())
+                    .header(ACCESS_CONTROL, "*")
+                    .type(MediaType.APPLICATION_JSON)
+                    .build();
+        }
     }
 
     private Response getErrorResponse(ErrorType errorType) {
@@ -98,6 +98,16 @@ public class Oidc4vciApiProvider implements RealmResourceProvider {
                 .status(Response.Status.BAD_REQUEST)
                 .entity(new ErrorResponse().error(errorEnum))
                 .build();
+    }
+
+    private void checkVcType(String vcType) {
+        Optional.ofNullable(vcType).map(VcType::fromValue).orElseThrow(() ->
+                new ErrorResponseException(getErrorResponse(ErrorType.valueOf("Invalid type"))));
+    }
+
+    private void checkVcFormat(String vcFormat) {
+        Optional.ofNullable(vcFormat).map(VcFormat::fromValue).orElseThrow(() ->
+                new ErrorResponseException(getErrorResponse(ErrorType.valueOf("Invalid format"))));
     }
 
 }

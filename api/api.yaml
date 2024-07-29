@@ -225,9 +225,19 @@ components:
           $ref: '#/components/schemas/VcType'
         cryptographic_binding_methods_supported:
           type: array
+          description: >
+            Array of case sensitive strings that identify the representation of the cryptographic key material 
+            that the issued Credential is bound to, as defined in Section 7.1. Support for keys in JWK format 
+            [RFC7517] is indicated by the value jwk. Support for keys expressed as a COSE Key object [RFC8152] 
+            (for example, used in [ISO.18013-5]) is indicated by the value cose_key. When the Cryptographic 
+            Binding Method is a DID, valid values are a did: prefix followed by a method-name using a syntax as 
+            defined in Section 3.1 of [DID-Core], but without a :and method-specific-id
           items:
             type: string
-          description: Array of case sensitive strings identifying the representation of the cryptographic key material.
+            enum:
+              - "jwk"
+              - "cose_key"
+              - "did:key"
         credential_signing_alg_values_supported:
           type: array
           items:
@@ -249,8 +259,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DisplayObject'
+        vct:
+          type: string
+          description: >
+            String as defined in Appendix A.3.2. This claim contains the type values the Wallet requests 
+            authorization for at the Credential Issuer. It MUST only be present if the format claim is present. 
+            It MUST not be present otherwise.
         claims:
-          $ref: '#/components/schemas/ClaimDisplayObject'
+            $ref: '#/components/schemas/ClaimsDisplayObject'
 
     ProofType:
       type: object
@@ -338,15 +354,46 @@ components:
         - name
         - logo
 
-    ClaimDisplayObject:
+    ClaimsDisplayObject:
       type: object
       additionalProperties:
-        type: object
-        properties:
-          display:
-            type: array
-            items:
-              $ref: '#/components/schemas/DisplayObject'
+        oneOf:
+          - $ref: '#/components/schemas/ClaimMetadata'
+          - type: object
+            additionalProperties:
+              $ref: '#/components/schemas/ClaimMetadata'
+
+    ClaimMetadata:
+      type: object
+      properties:
+        mandatory:
+          type: boolean
+          default: false
+        value_type:
+          type: string
+          enum:
+            - "string"
+            - "number"
+            - "image/jpeg"
+            - "image/png"
+            - "other"
+        display:
+          type: array
+          items:
+            $ref: '#/components/schemas/DisplayProperties'
+
+    DisplayProperties:
+      type: object
+      properties:
+        name:
+          type: string
+        locale:
+          type: string
+          description: "Language tag values as defined in BCP47"
+        order:
+          type: array
+          items:
+            type: string
 
     # https://openid.github.io/OpenID4VCI/openid-4-verifiable-credential-issuance-wg-draft.html#name-oauth-20-authorization-serv
     AuthorizationServerMetadata:
@@ -449,6 +496,10 @@ components:
         - "VerifiableCertification"
       example: "LEARCredentialEmployee"
 
+    CredentialOfferUri:
+      type: string
+      example: "openid-credential-offer://?credential_offer_uri=https%3A%2F%2Fserver%2Eexample%2Ecom%2Fcredential-offer%2FGkurKxf5T0Y-mnPFCHqWOMiZi4VS138cQO_V7PZHAdM"
+
     ErrorResponse:
       type: object
       properties:
@@ -460,4 +511,5 @@ components:
             - unsupported_credential_type
             - unsupported_credential_format
             - invalid_or_missing_proof
+            - invalid_or_missing_credential_offer
           example: "invalid_request"
