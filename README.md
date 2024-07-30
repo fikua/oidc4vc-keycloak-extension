@@ -3,6 +3,10 @@
 # Pre-requisites
 1. Docker Desktop
 
+# Test
+
+We add a Postman JSON file to test the OIDC4VC Keycloak extension. The file is located in the `doc` folder.
+
 # Steps to run the project
 
 1. Clone the repository

@@ -357,11 +357,7 @@ components:
     ClaimsDisplayObject:
       type: object
       additionalProperties:
-        oneOf:
-          - $ref: '#/components/schemas/ClaimMetadata'
-          - type: object
-            additionalProperties:
-              $ref: '#/components/schemas/ClaimMetadata'
+        $ref: '#/components/schemas/ClaimMetadata'
 
     ClaimMetadata:
       type: object

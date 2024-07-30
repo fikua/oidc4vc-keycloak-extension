@@ -41,6 +41,16 @@ public class Oidc4vciApiProvider implements RealmResourceProvider {
     }
 
     @GET
+    @Path("greetings")
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response getGreetings() {
+        return Response.ok()
+                .entity("Welcome to the OIDC4VCI API")
+                .header(ACCESS_CONTROL, "*")
+                .build();
+    }
+
+    @GET
     @Path(".well-known/openid-configuration")
     @Produces({MediaType.APPLICATION_JSON})
     public Response getAuthServerMetadata() {
@@ -78,11 +88,11 @@ public class Oidc4vciApiProvider implements RealmResourceProvider {
     @Produces({MediaType.APPLICATION_JSON})
     public Response getCredentialOfferById(@PathParam("id") String id) {
         try {
-        return Response.ok()
-                .entity(oidc4VCIService.getCredentialOfferById(id))
-                .header(ACCESS_CONTROL, "*")
-                .type(MediaType.APPLICATION_JSON)
-                .build();
+            return Response.ok()
+                    .entity(oidc4VCIService.getCredentialOfferById(id))
+                    .header(ACCESS_CONTROL, "*")
+                    .type(MediaType.APPLICATION_JSON)
+                    .build();
         } catch (ErrorResponseException e) {
             return Response.fromResponse(e.getResponse())
                     .entity(e.getResponse())

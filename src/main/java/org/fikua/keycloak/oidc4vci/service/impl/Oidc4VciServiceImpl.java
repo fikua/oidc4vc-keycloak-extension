@@ -63,50 +63,20 @@ public class Oidc4VciServiceImpl implements Oidc4vciService {
     }
 
     public CredentialIssuerMetadata buildCredentialIssuerMetadata() {
+        VcType learCredentialEmployeeType = VcType.LEAR_CREDENTIAL_EMPLOYEE;
+        VcType verifiableCertificationType = VcType.VERIFIABLE_CERTIFICATION;
         // Build Credential Configuration Supported Map
         Map<String, CredentialConfiguration> credentialConfigurationSupported = new HashMap<>();
         // Credential Configuration Supported for LEARCredentialEmployee
-        CredentialConfiguration learCredentialEmployeeCredentialConfiguration = new CredentialConfiguration();
-        // Format
-        learCredentialEmployeeCredentialConfiguration.setFormat(VcFormat.JWT_VC_JSON);
-        // Scope
-        learCredentialEmployeeCredentialConfiguration.setScope(VcType.LEAR_CREDENTIAL_EMPLOYEE);
-        // cryptographic_binding_methods_supported
-        learCredentialEmployeeCredentialConfiguration.setCryptographicBindingMethodsSupported(
-                List.of(CredentialConfiguration.CryptographicBindingMethodsSupportedEnum.DID_KEY));
-        // credential_signing_alg_values_supported
-        learCredentialEmployeeCredentialConfiguration.setCredentialSigningAlgValuesSupported(
-                List.of(SignatureAlgorithm.ES256.getValue()));
-        // proof_types_supported
-        ProofTypeValue proofTypeValue = new ProofTypeValue();
-        proofTypeValue.setProofSigningAlgValuesSupported(List.of(SignatureAlgorithm.ES256));
-        learCredentialEmployeeCredentialConfiguration.setProofTypesSupported(
-                Map.of(ProofType.JWT.getValue(), proofTypeValue));
-        // vct
-        learCredentialEmployeeCredentialConfiguration.setVct("LEARCredentialEmployee");
-        // claims
-//        ClaimsDisplayObjectValue mantadorClaims = new ClaimsDisplayObjectValue();
-//        ClaimsDisplayObjectValue mandateeClaims = new ClaimsDisplayObjectValue();
-
-
-
-        learCredentialEmployeeCredentialConfiguration.setClaims(
-                Map.of("mandator", new ClaimsDisplayObjectValue()));
-
-        credentialConfigurationSupported.put("LEARCredentialEmployee", learCredentialEmployeeCredentialConfiguration);
+        CredentialConfiguration learCredentialEmployeeCredentialConfiguration =
+                buildLEARCredentialEmployeeCredentialConfiguration(learCredentialEmployeeType);
+        credentialConfigurationSupported.put(learCredentialEmployeeType.getValue(),
+                learCredentialEmployeeCredentialConfiguration);
         // Credential Configuration Supported for VerifiableCertification
-        CredentialConfiguration verifiableCertificatioCredentialConfiguration = new CredentialConfiguration();
-        verifiableCertificatioCredentialConfiguration.setFormat(VcFormat.JWT_VC_JSON);
-        verifiableCertificatioCredentialConfiguration.setScope(VcType.VERIFIABLE_CERTIFICATION);
-        // credential_signing_alg_values_supported
-        verifiableCertificatioCredentialConfiguration.setCredentialSigningAlgValuesSupported(
-                List.of(SignatureAlgorithm.ES256.getValue()));
-        verifiableCertificatioCredentialConfiguration.setVct("VerifiableCertification");
-
-//        verifiableCertificatioCredentialConfiguration.setClaims(
-//                Map.of());
-
-        credentialConfigurationSupported.put("VerifiableCertification", verifiableCertificatioCredentialConfiguration);
+        CredentialConfiguration verifiableCertificatioCredentialConfiguration =
+                buildVerifiableCertificationCredentialConfiguration(verifiableCertificationType);
+        credentialConfigurationSupported.put(verifiableCertificationType.getValue(),
+                verifiableCertificatioCredentialConfiguration);
         // Build Credential Issuer Metadata object
         CredentialIssuerMetadata credentialIssuerMetadata = new CredentialIssuerMetadata();
         credentialIssuerMetadata.setCredentialIssuer(KeycloakConfig.getIssuerExternalUrl());
@@ -115,12 +85,46 @@ public class Oidc4VciServiceImpl implements Oidc4vciService {
         return credentialIssuerMetadata;
     }
 
+    private CredentialConfiguration buildLEARCredentialEmployeeCredentialConfiguration(VcType vcType) {
+        // Credential Configuration Supported for LEARCredentialEmployee
+        CredentialConfiguration learCredentialEmployeeCredentialConfiguration;
+        learCredentialEmployeeCredentialConfiguration = getCredentialConfiguration(vcType);
+        // cryptographic_binding_methods_supported
+        learCredentialEmployeeCredentialConfiguration.setCryptographicBindingMethodsSupported(
+                List.of(CredentialConfiguration.CryptographicBindingMethodsSupportedEnum.DID_KEY));
+        // proof_types_supported
+        ProofTypeValue proofTypeValue = new ProofTypeValue();
+        proofTypeValue.setProofSigningAlgValuesSupported(List.of(SignatureAlgorithm.ES256));
+        learCredentialEmployeeCredentialConfiguration.setProofTypesSupported(
+                Map.of(ProofType.JWT.getValue(), proofTypeValue));
+        // claims
+        // add credential claims - optional for now
+        return learCredentialEmployeeCredentialConfiguration;
+    }
+
+    private CredentialConfiguration buildVerifiableCertificationCredentialConfiguration(VcType vcType) {
+        // claims
+        // add credential claims - optional for now
+        return getCredentialConfiguration(vcType);
+    }
+
+    private CredentialConfiguration getCredentialConfiguration(VcType vcType) {
+        CredentialConfiguration verifiableCertificatioCredentialConfiguration = new CredentialConfiguration();
+        verifiableCertificatioCredentialConfiguration.setFormat(VcFormat.JWT_VC_JSON);
+        verifiableCertificatioCredentialConfiguration.setScope(vcType);
+        // credential_signing_alg_values_supported
+        verifiableCertificatioCredentialConfiguration.setCredentialSigningAlgValuesSupported(
+                List.of(SignatureAlgorithm.ES256.getValue()));
+        // vct
+        verifiableCertificatioCredentialConfiguration.setVct(vcType.getValue());
+        return verifiableCertificatioCredentialConfiguration;
+    }
+
     public AuthorizationServerMetadata buildOAuth2AuthorizationServerMetadata() {
         AuthorizationServerMetadata authorizationServerMetadata = new AuthorizationServerMetadata();
         authorizationServerMetadata.setPreAuthorizedGrantAnonymousAccessSupported(true);
         return authorizationServerMetadata;
     }
-
 
     private PreAuthorizedCodeGrantUrnIetfParamsOauthGrantTypePreAuthorizedCode buildPreAuthorizedCodeGrant() {
         // Build and store pre-authorized_code value

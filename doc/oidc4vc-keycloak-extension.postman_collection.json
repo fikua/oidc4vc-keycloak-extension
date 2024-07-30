@@ -1,0 +1,204 @@
+{
+	"info": {
+		"_postman_id": "dfe7a496-2fc8-434c-989f-bfad807c0969",
+		"name": "oidc4vc-keycloak-extension",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "10786101"
+	},
+	"item": [
+		{
+			"name": "OIDC4VCI",
+			"item": [
+				{
+					"name": "OIDC4VCI Greetings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/realms/{{Realm}}/vci/greetings",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"realms",
+								"{{Realm}}",
+								"vci",
+								"greetings"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "OAuth 2.0 Authorization Server Metadata",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/realms/{{Realm}}/vci/.well-known/openid-configuration",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"realms",
+								"{{Realm}}",
+								"vci",
+								".well-known",
+								"openid-configuration"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Credential Issuer Metadata",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/realms/{{Realm}}/vci/.well-known/openid-credential-issuer",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"realms",
+								"{{Realm}}",
+								"vci",
+								".well-known",
+								"openid-credential-issuer"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Credential Offer",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/realms/{{Realm}}/vci/credential-offer?type=VerifiableCertification&format=jwt_vc_json",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"realms",
+								"{{Realm}}",
+								"vci",
+								"credential-offer"
+							],
+							"query": [
+								{
+									"key": "type",
+									"value": "VerifiableCertification"
+								},
+								{
+									"key": "format",
+									"value": "jwt_vc_json"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Credential Offer By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/realms/{{Realm}}/vci/credential-offer/SQ8npMwXRfSJQGEszYAqrg",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"realms",
+								"{{Realm}}",
+								"vci",
+								"credential-offer",
+								"SQ8npMwXRfSJQGEszYAqrg"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "OIDC4VP",
+			"item": [
+				{
+					"name": "OIDC4VP Greetings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/realms/{{Realm}}/vp/greetings",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"realms",
+								"{{Realm}}",
+								"vp",
+								"greetings"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "Realm",
+			"value": "oidc4vci",
+			"type": "string"
+		},
+		{
+			"key": "vcType",
+			"value": "LEARCredentialEmployee",
+			"type": "string"
+		},
+		{
+			"key": "vcFormat",
+			"value": "jwt_vc_json",
+			"type": "string"
+		}
+	]
+}

@@ -1,1 +1,2 @@
 org.fikua.keycloak.oidc4vci.provider.Oidc4vciApiProviderFactory
+org.fikua.keycloak.oidc4vp.provider.Oidc4vpApiProviderFactory
