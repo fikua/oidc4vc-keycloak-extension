@@ -7,15 +7,25 @@ import lombok.extern.slf4j.Slf4j;
 import org.fikua.keycloak.config.KeycloakConfig;
 import org.fikua.keycloak.oidc4vci.service.Oidc4vciService;
 import org.fikua.model.*;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.common.util.Time;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.model.ProofType;
+import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.util.DefaultClientSessionContext;
 
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static org.fikua.keycloak.config.KeycloakConfig.*;
@@ -85,6 +95,79 @@ public class Oidc4VciServiceImpl implements Oidc4vciService {
         return credentialIssuerMetadata;
     }
 
+    /**
+     * If the provided tx_code don't match with the one bounded with the pre-authorized_code in cache throw error.
+     *
+     * @param txCode            - tx_code
+     * @param preAuthorizedCode - pre-authorized_code
+     */
+    public void verifyTxCode(String txCode, String preAuthorizedCode) {
+        if (!Objects.equals(cache.getIfPresent(preAuthorizedCode), txCode)) {
+            cache.invalidate(preAuthorizedCode);
+            throw new ErrorResponseException(Response
+                    .status(Response.Status.NOT_FOUND)
+                    .entity(new ErrorResponse().error(ErrorResponse.ErrorEnum.INVALID_TX_CODE))
+                    .build());
+        }
+    }
+
+    public TokenResponse buildTokenResponse(KeycloakSession session, String preAuthorizedCode) {
+        // Build EventBuilder
+        EventBuilder eventBuilder = new EventBuilder(session.getContext().getRealm(), session,
+                session.getContext().getConnection());
+        // Parse the pre-authorized_code
+        OAuth2CodeParser.ParseResult result = OAuth2CodeParser.parseCode(session, preAuthorizedCode,
+                session.getContext().getRealm(), eventBuilder);
+        // Check if the code is expired or illegal
+        checkIfCodeIsExpiredOrIllegal(result);
+        // Set the realm and client in the session context
+        session.getContext().setRealm(result.getClientSession().getRealm());
+        session.getContext().setClient(result.getClientSession().getClient());
+        // Create the client access token
+        AccessToken accessToken = new TokenManager().createClientAccessToken(session,
+                result.getClientSession().getRealm(),
+                result.getClientSession().getClient(),
+                result.getClientSession().getUserSession().getUser(),
+                result.getClientSession().getUserSession(),
+                DefaultClientSessionContext.fromClientSessionAndScopeParameter(result.getClientSession(),
+                        OAuth2Constants.SCOPE_OPENID, session));
+        // setting custom expiration time from env variables
+        accessToken.exp((long) (getTokenExpiration() + Time.currentTime()));
+        String encryptedToken = session.tokens().encodeAndEncrypt(accessToken);
+
+        // todo: review new issuer flow
+//        sendPreAuthCodeAndAccessTokenToIssuer(preAuthorizedCode, encryptedToken);
+
+        // Build c_nonce and c_nonce_expires_in
+        long expiresIn = accessToken.getExp() - Time.currentTime();
+        String nonce = generateCustomNonce();
+        cache.put(nonce, nonce);
+
+        // Build and return TokenResponse
+        return getTokenResponse(encryptedToken, expiresIn, nonce);
+    }
+
+    private static TokenResponse getTokenResponse(String encryptedToken, long expiresIn, String nonce) {
+        long nonceExpiresIn = (int) TimeUnit.SECONDS.convert(getPreAuthLifespan(), getPreAuthLifespanTimeUnit());
+        // Build and return TokenResponse
+        TokenResponse tokenResponse = new TokenResponse();
+        tokenResponse.setAccessToken(encryptedToken);
+        tokenResponse.setTokenType(TokenResponse.TokenTypeEnum.BEARER);
+        tokenResponse.setExpiresIn(BigDecimal.valueOf(expiresIn));
+        tokenResponse.setcNonce(nonce);
+        tokenResponse.setcNonceExpiresIn(BigDecimal.valueOf(nonceExpiresIn));
+        return tokenResponse;
+    }
+
+    private void checkIfCodeIsExpiredOrIllegal(OAuth2CodeParser.ParseResult result) {
+        if (result.isExpiredCode() || result.isIllegalCode()) {
+            throw new ErrorResponseException(Response
+                    .status(Response.Status.NOT_FOUND)
+                    .entity(new ErrorResponse().error(ErrorResponse.ErrorEnum.INVALID_TOKEN))
+                    .build());
+        }
+    }
+
     private CredentialConfiguration buildLEARCredentialEmployeeCredentialConfiguration(VcType vcType) {
         // Credential Configuration Supported for LEARCredentialEmployee
         CredentialConfiguration learCredentialEmployeeCredentialConfiguration;
@@ -133,6 +216,9 @@ public class Oidc4VciServiceImpl implements Oidc4vciService {
         // Build and store tx_code value
         String txCodeValue = generateTxCodeValue();
         cache.put(preAuthorizedCodeValue, txCodeValue);
+
+        // todo: send email with tx_code to the user
+
         // Build tx_code object
         PreAuthorizedCodeGrantUrnIetfParamsOauthGrantTypePreAuthorizedCodeTxCode txCode =
                 new PreAuthorizedCodeGrantUrnIetfParamsOauthGrantTypePreAuthorizedCodeTxCode()

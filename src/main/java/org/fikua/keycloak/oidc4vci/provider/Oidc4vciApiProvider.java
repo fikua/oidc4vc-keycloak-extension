@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.fikua.keycloak.oidc4vci.service.Oidc4vciService;
 import org.fikua.keycloak.oidc4vci.service.impl.Oidc4VciServiceImpl;
 import org.fikua.model.ErrorResponse;
+import org.fikua.model.TokenResponse;
 import org.fikua.model.VcFormat;
 import org.fikua.model.VcType;
 import org.keycloak.models.KeycloakSession;
@@ -102,6 +103,34 @@ public class Oidc4vciApiProvider implements RealmResourceProvider {
         }
     }
 
+    @POST
+    @Path("token")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getToken(@HeaderParam("notification") String notification,
+                             @FormParam("grant_type") String grantType,
+                             @FormParam("pre-authorized_code") String preAuthorizedCode,
+                             @FormParam("tx_code") String txCode) {
+        try {
+            // Verify GrantType is pre-authorized_code
+            checkGrantType(grantType);
+            // Verify tx_code
+            oidc4VCIService.verifyTxCode(txCode, preAuthorizedCode);
+            // Build Access Token and Token Response
+            TokenResponse tokenResponse = oidc4VCIService.buildTokenResponse(session, preAuthorizedCode);
+            return Response.ok().entity(tokenResponse)
+                    .header(ACCESS_CONTROL, "*")
+                    .header("Content-Type", MediaType.APPLICATION_JSON)
+                    .build();
+        } catch (ErrorResponseException e) {
+            return Response.fromResponse(e.getResponse())
+                    .entity(e.getResponse())
+                    .header(ACCESS_CONTROL, "*")
+                    .type(MediaType.APPLICATION_JSON)
+                    .build();
+        }
+    }
+
     private Response getErrorResponse(ErrorType errorType) {
         ErrorResponse.ErrorEnum errorEnum = ErrorResponse.ErrorEnum.fromValue(errorType.getValue());
         return Response
@@ -112,12 +141,19 @@ public class Oidc4vciApiProvider implements RealmResourceProvider {
 
     private void checkVcType(String vcType) {
         Optional.ofNullable(vcType).map(VcType::fromValue).orElseThrow(() ->
-                new ErrorResponseException(getErrorResponse(ErrorType.valueOf("Invalid type"))));
+                new ErrorResponseException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_TYPE)));
     }
 
     private void checkVcFormat(String vcFormat) {
         Optional.ofNullable(vcFormat).map(VcFormat::fromValue).orElseThrow(() ->
-                new ErrorResponseException(getErrorResponse(ErrorType.valueOf("Invalid format"))));
+                new ErrorResponseException(getErrorResponse(ErrorType.UNSUPPORTED_CREDENTIAL_FORMAT)));
+    }
+
+    private void checkGrantType(String grantType) {
+        if (!"pre-authorized_code".equals(grantType)) {
+            throw new ErrorResponseException(getErrorResponse(
+                    ErrorType.valueOf(ErrorResponse.ErrorEnum.UNSUPPORTED_GRANT_TYPE.getValue())));
+        }
     }
 
 }
