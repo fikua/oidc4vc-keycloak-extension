@@ -107,8 +107,7 @@ public class Oidc4vciApiProvider implements RealmResourceProvider {
     @Path("token")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getToken(@HeaderParam("notification") String notification,
-                             @FormParam("grant_type") String grantType,
+    public Response getToken(@FormParam("grant_type") String grantType,
                              @FormParam("pre-authorized_code") String preAuthorizedCode,
                              @FormParam("tx_code") String txCode) {
         try {

@@ -149,6 +149,13 @@ public class Oidc4VciServiceImpl implements Oidc4vciService {
 
     private static TokenResponse getTokenResponse(String encryptedToken, long expiresIn, String nonce) {
         long nonceExpiresIn = (int) TimeUnit.SECONDS.convert(getPreAuthLifespan(), getPreAuthLifespanTimeUnit());
+        // Build Authorization Details
+        TokenResponseAuthorizationDetailsInner learCredentialEmployeeAuthorizationDetails = new TokenResponseAuthorizationDetailsInner();
+        learCredentialEmployeeAuthorizationDetails.type("openid_credential");
+        learCredentialEmployeeAuthorizationDetails.credentialConfigurationId("LEARCredentialEmployee");
+        TokenResponseAuthorizationDetailsInner verifiableCertificationAuthorizationDetails = new TokenResponseAuthorizationDetailsInner();
+        verifiableCertificationAuthorizationDetails.type("openid_credential");
+        verifiableCertificationAuthorizationDetails.credentialConfigurationId("VerifiableCertification");
         // Build and return TokenResponse
         TokenResponse tokenResponse = new TokenResponse();
         tokenResponse.setAccessToken(encryptedToken);
@@ -156,14 +163,19 @@ public class Oidc4VciServiceImpl implements Oidc4vciService {
         tokenResponse.setExpiresIn(BigDecimal.valueOf(expiresIn));
         tokenResponse.setcNonce(nonce);
         tokenResponse.setcNonceExpiresIn(BigDecimal.valueOf(nonceExpiresIn));
+        tokenResponse.setAuthorizationDetails(List.of(
+                learCredentialEmployeeAuthorizationDetails,
+                verifiableCertificationAuthorizationDetails));
         return tokenResponse;
     }
 
     private void checkIfCodeIsExpiredOrIllegal(OAuth2CodeParser.ParseResult result) {
         if (result.isExpiredCode() || result.isIllegalCode()) {
             throw new ErrorResponseException(Response
-                    .status(Response.Status.NOT_FOUND)
-                    .entity(new ErrorResponse().error(ErrorResponse.ErrorEnum.INVALID_TOKEN))
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity(new ErrorResponse()
+                            .error(ErrorResponse.ErrorEnum.INVALID_TOKEN)
+                            .message("Invalid pre-authorized_code"))
                     .build());
         }
     }

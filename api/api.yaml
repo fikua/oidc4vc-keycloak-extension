@@ -512,6 +512,9 @@ components:
             - unsupported_grant_type
             - invalid_tx_code
           example: "invalid_request"
+        message:
+          type: string
+          example: "The Credential Request is invalid or unauthorized"
 
     TokenResponse:
       type: object
